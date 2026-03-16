@@ -1,6 +1,6 @@
 # KananHack Server — API Documentation
 
-Base URL: `http://localhost:3100`
+Base URL: `http://localhost:3000`
 
 All protected routes require the header:
 ```
