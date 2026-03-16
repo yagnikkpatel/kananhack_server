@@ -23,6 +23,23 @@ const fileSchema = new mongoose.Schema(
       type: Buffer,
       required: true,
     },
+    documentType: {
+      type: String,
+      enum: [
+        "passport",
+        "pancard",
+        "marksheet",
+        "statement_of_purpose",
+        "recommendation_letter",
+        "unknown",
+        undefined,
+      ],
+    },
+    // Cached AI extraction result (verification_status, authenticity_score, summary, etc.)
+    extractedData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   { timestamps: true }
 );

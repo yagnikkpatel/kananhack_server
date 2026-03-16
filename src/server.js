@@ -4,7 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
-import main from "./services/ai.service.js";
+import applicationRoutes from "./routes/applicationRoutes.js";
 
 dotenv.config();
 
@@ -17,6 +17,8 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 // file routes
 app.use("/api/files", fileRoutes);
+// application progress / dashboard / submission routes
+app.use("/api/application", applicationRoutes);
 
 const PORT = process.env.PORT || 3100;
 
@@ -28,5 +30,4 @@ app.get("/health", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port: http://localhost:${PORT}`);
   connectDB();
-  main();
 });

@@ -8,12 +8,14 @@ const fileFilter = (req, file, cb) => {
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/jpg",
   ];
 
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only PDF and DOC/DOCX files are allowed"));
+    cb(new Error("Only PDF, DOC/DOCX, and JPEG files are allowed"));
   }
 };
 

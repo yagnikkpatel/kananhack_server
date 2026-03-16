@@ -1,4 +1,11 @@
 import File from "../models/File.js";
+import {
+  classifyAndUpdateDocumentType,
+  extractMarksheetInfoFromFile,
+  summarizeSopFromFile,
+  extractPancardInfoFromFile,
+  analyzeAndSuggestSop,
+} from "../services/documentClassification.service.js";
 
 export const uploadFile = async (req, res) => {
   try {
@@ -107,3 +114,175 @@ export const getAllFiles = async (req, res) => {
   }
 };
 
+export const classifyFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const fileDoc = await File.findById(id);
+
+    if (!fileDoc) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    if (
+      fileDoc.owner &&
+      req.user &&
+      fileDoc.owner.toString() !== req.user._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to classify this file" });
+    }
+
+    const documentType = await classifyAndUpdateDocumentType(fileDoc);
+
+    return res.status(200).json({
+      message: "Document classified successfully",
+      documentType,
+    });
+  } catch (error) {
+    console.error("Error in classifyFile:", error);
+    if (error?.status === 429 || error?.code === 429) {
+      return res.status(429).json({
+        message: "Gemini quota exceeded. Please try again later.",
+      });
+    }
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getMarksheetDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const fileDoc = await File.findById(id);
+
+    if (!fileDoc) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    if (
+      fileDoc.owner &&
+      req.user &&
+      fileDoc.owner.toString() !== req.user._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to access this file" });
+    }
+
+    const result = await extractMarksheetInfoFromFile(fileDoc);
+
+    // Cache the extraction result on the file document
+    fileDoc.extractedData = result;
+    await fileDoc.save();
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getMarksheetDetails:", error);
+    if (error?.status === 429 || error?.code === 429) {
+      return res.status(429).json({
+        message: "Gemini quota exceeded. Please try again later.",
+      });
+    }
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getSopSummary = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const fileDoc = await File.findById(id);
+
+    if (!fileDoc) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    if (
+      fileDoc.owner &&
+      req.user &&
+      fileDoc.owner.toString() !== req.user._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to access this file" });
+    }
+
+    const result = await summarizeSopFromFile(fileDoc);
+
+    // Cache the extraction result on the file document
+    fileDoc.extractedData = result;
+    await fileDoc.save();
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getSopSummary:", error);
+    if (error?.status === 429 || error?.code === 429) {
+      return res.status(429).json({
+        message: "Gemini quota exceeded. Please try again later.",
+      });
+    }
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getPancardSummary = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const fileDoc = await File.findById(id);
+
+    if (!fileDoc) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    if (
+      fileDoc.owner &&
+      req.user &&
+      fileDoc.owner.toString() !== req.user._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to access this file" });
+    }
+
+    const result = await extractPancardInfoFromFile(fileDoc);
+
+    // Cache the extraction result on the file document
+    fileDoc.extractedData = result;
+    await fileDoc.save();
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getPancardSummary:", error);
+    if (error?.status === 429 || error?.code === 429) {
+      return res.status(429).json({
+        message: "Gemini quota exceeded. Please try again later.",
+      });
+    }
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getSopAnalysis = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fileDoc = await File.findById(id);
+
+    if (!fileDoc) return res.status(404).json({ message: "File not found" });
+
+    // Ensure it is an SOP
+    if (fileDoc.documentType !== "statement_of_purpose") {
+      return res.status(400).json({ message: "Document must be classified as statement_of_purpose first." });
+    }
+
+    const analysis = await analyzeAndSuggestSop(fileDoc);
+    return res.status(200).json(analysis);
+  } catch (error) {
+    console.error("Error in getSopAnalysis:", error);
+    if (error?.status === 429) return res.status(429).json({ message: "AI Quota exceeded" });
+    return res.status(500).json({ message: "Server error" });
+  }
+};
